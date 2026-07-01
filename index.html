@@ -3,73 +3,311 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>ぷくちゃん</title>
+<title>ぷくちゃんの まち</title>
 <style>
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
     width: 100%;
-    min-height: 100%;
-    min-height: 100dvh;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    background: #bfe8ff;
     font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Rounded Mplus 1c", sans-serif;
-    background: linear-gradient(135deg, #ffd3e0, #c9f0ff, #fff6b7, #d5ffd5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
-  .card {
-    background: rgba(255,255,255,0.85);
-    border-radius: 24px;
-    padding: 6vw 6vw calc(6vw + env(safe-area-inset-bottom)) 6vw;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    text-align: center;
+
+  #app {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  #townSvg {
     width: 100%;
-    max-width: 480px;
-    margin: 4vh 4vw;
-  }
-  h1 {
-    margin-top: 0;
-    color: #444;
-    font-size: clamp(24px, 7vw, 34px);
-  }
-  .links {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-top: 24px;
-  }
-  a.button {
+    height: 100%;
     display: block;
-    padding: 18px 24px;
-    border-radius: 999px;
-    background: #ff8fab;
-    color: white;
-    text-decoration: none;
-    font-size: clamp(16px, 4.6vw, 20px);
-    font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   }
-  a.button.sleep { background: #6c8cff; }
-  a.button.food { background: #ff9f45; }
-  a.button.bath { background: #4fb4ef; }
-  a.button.draw { background: #ffd93d; color: #555; }
-  a.button.clean { background: #7c6cff; }
-  a.button.exercise { background: #4fcf9e; }
+
+  .spot {
+    cursor: pointer;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+  }
+  .spot.bounce {
+    animation: spotBounce 0.5s ease;
+  }
+  @keyframes spotBounce {
+    0%   { transform: scale(1, 1); }
+    30%  { transform: scale(1.16, 0.82); }
+    55%  { transform: translateY(-16%) scale(0.88, 1.14); }
+    80%  { transform: translateY(0) scale(1.08, 0.94); }
+    100% { transform: scale(1, 1); }
+  }
+
+  .puku-idle {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: idleBob 2.4s ease-in-out infinite;
+  }
+  @keyframes idleBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4%); }
+  }
+
+  .wave-arm {
+    transform-box: fill-box;
+    transform-origin: 50% 10%;
+    animation: waveArm 1.1s ease-in-out infinite;
+  }
+  @keyframes waveArm {
+    0%, 100% { transform: rotate(-6deg); }
+    50%      { transform: rotate(30deg); }
+  }
+
+  .twinkle {
+    animation: twinkle 1.8s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.35; }
+    50%      { opacity: 1; }
+  }
+
+  .steam {
+    animation: steamRise 2.6s ease-in-out infinite;
+  }
+  @keyframes steamRise {
+    0%   { transform: translateY(0) scale(1); opacity: 0.75; }
+    50%  { transform: translateY(-10px) scale(1.15); opacity: 0.9; }
+    100% { transform: translateY(-20px) scale(1.3); opacity: 0; }
+  }
+
+  .label {
+    font-size: 15px;
+    font-weight: 800;
+    fill: #5a4a3a;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: #ffffff;
+    stroke-width: 4;
+    stroke-linejoin: round;
+  }
+
+  #appTitle {
+    font-size: 20px;
+    font-weight: 900;
+    fill: #ffffff;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: #ff9fc0;
+    stroke-width: 6;
+    stroke-linejoin: round;
+  }
 </style>
 </head>
 <body>
-  <div class="card">
-    <h1>ぷくちゃん</h1>
-    <div class="links">
-      <a class="button" href="pukuchan_dance.html">ぷくちゃんと おどろう！</a>
-      <a class="button sleep" href="pukuchan_sleep.html">ぷくちゃん ねんねしようね</a>
-      <a class="button food" href="pukuchan_food.html">ぷくちゃんの ごはん</a>
-      <a class="button bath" href="pukuchan_bath.html">ぷくちゃんの おふろ</a>
-      <a class="button draw" href="pukuchan_draw.html">ぷくちゃんと おえかき</a>
-      <a class="button clean" href="pukuchan_clean.html">ぷくちゃんの おそうじ</a>
-      <a class="button exercise" href="pukuchan_exercise.html">ぷくちゃんの たいそう</a>
-    </div>
+  <div id="app">
+    <svg id="townSvg" viewBox="0 0 390 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#bfe8ff"/>
+          <stop offset="1" stop-color="#eaf9ff"/>
+        </linearGradient>
+        <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a9e8ab"/>
+          <stop offset="1" stop-color="#5fcb7f"/>
+        </linearGradient>
+        <radialGradient id="nightGrad" cx="50%" cy="35%" r="70%">
+          <stop offset="0" stop-color="#2b3d6f"/>
+          <stop offset="100%" stop-color="#141b3a"/>
+        </radialGradient>
+      </defs>
+
+      <!-- そら -->
+      <rect x="0" y="0" width="390" height="260" fill="url(#skyGrad)"/>
+      <circle cx="335" cy="55" r="30" fill="#ffe27a" opacity="0.55"/>
+      <circle cx="335" cy="55" r="20" fill="#ffe27a"/>
+      <ellipse cx="60" cy="70" rx="34" ry="16" fill="#ffffff" opacity="0.8"/>
+      <ellipse cx="90" cy="60" rx="24" ry="13" fill="#ffffff" opacity="0.8"/>
+
+      <!-- おか -->
+      <path d="M0,235 Q100,175 195,205 T390,190 L390,900 L0,900 Z" fill="url(#grassGrad)"/>
+
+      <!-- よぞらエリア -->
+      <ellipse cx="195" cy="150" rx="180" ry="120" fill="url(#nightGrad)"/>
+      <g class="twinkle" style="animation-delay:0s"><path d="M55,90 l3,7 l7,1 l-5,5 l1,7 l-6,-4 l-6,4 l1,-7 l-5,-5 l7,-1 z" fill="#fff6b7"/></g>
+      <g class="twinkle" style="animation-delay:0.4s"><circle cx="90" cy="60" r="3" fill="#ffffff"/></g>
+      <g class="twinkle" style="animation-delay:0.9s"><circle cx="300" cy="70" r="3.5" fill="#ffffff"/></g>
+      <g class="twinkle" style="animation-delay:0.2s"><circle cx="325" cy="120" r="2.5" fill="#ffffff"/></g>
+      <g class="twinkle" style="animation-delay:1.3s"><circle cx="130" cy="110" r="2.5" fill="#ffffff"/></g>
+      <path d="M255,75 a26,26 0 1 0 6,32 a20,20 0 1 1 -6,-32 z" fill="#fff6da"/>
+
+      <!-- みち -->
+      <path d="M195,140 L110,290 L280,400 L110,510 L280,620 L110,730 L195,830"
+            fill="none" stroke="#f3dfb0" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 26" opacity="0.9"/>
+
+      <!-- ============ よぞら（ねんね） ============ -->
+      <g class="spot" data-href="pukuchan_sleep.html" style="animation-delay:0s">
+        <circle cx="195" cy="150" r="88" fill="transparent"/>
+        <g class="puku-idle" style="animation-delay:0.1s">
+          <ellipse cx="195" cy="182" rx="30" ry="22" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+          <ellipse id="armWaveSleep" cx="220" cy="176" rx="9" ry="14" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3" class="wave-arm" style="animation-delay:0.2s"/>
+          <circle cx="195" cy="150" r="26" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+          <path d="M182,150 q6,6 12,0" stroke="#2B2B3A" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M170,152 q9,9 18,0" stroke="#2B2B3A" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <text x="205" y="130" font-size="14" fill="#ffffff">z z</text>
+        </g>
+        <text class="label" x="195" y="238" fill="#ffffff" stroke="#2b3d6f">ねんね</text>
+      </g>
+
+      <!-- ============ うんどうじょう（たいそう） ============ -->
+      <g class="spot" data-href="pukuchan_exercise.html" style="animation-delay:0.05s">
+        <circle cx="110" cy="290" r="66" fill="transparent"/>
+        <ellipse cx="110" cy="300" rx="52" ry="22" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.8"/>
+        <ellipse cx="110" cy="300" rx="52" ry="22" fill="none" stroke="#e6845a" stroke-width="3" stroke-dasharray="4 10" opacity="0.9"/>
+        <rect x="150" y="255" width="4" height="34" fill="#8a6a45"/>
+        <polygon points="154,256 174,264 154,272" fill="#ff5b7f"/>
+        <g class="puku-idle" style="animation-delay:0.3s">
+          <ellipse cx="90" cy="303" rx="16" ry="13" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <ellipse cx="76" cy="298" rx="6" ry="9" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="2.5" class="wave-arm" style="animation-delay:0.5s"/>
+          <circle cx="90" cy="280" r="15" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <circle cx="86" cy="279" r="2" fill="#2B2B3A"/>
+          <circle cx="94" cy="279" r="2" fill="#2B2B3A"/>
+        </g>
+        <text class="label" x="110" y="345">うんどう</text>
+      </g>
+
+      <!-- ============ アトリエ（おえかき） ============ -->
+      <g class="spot" data-href="pukuchan_draw.html" style="animation-delay:0.1s">
+        <circle cx="280" cy="400" r="66" fill="transparent"/>
+        <rect x="248" y="380" width="64" height="52" rx="6" fill="#fff6da" stroke="#c9a86a" stroke-width="3"/>
+        <polygon points="242,380 280,352 318,380" fill="#ff9fc0" stroke="#c9a86a" stroke-width="3" stroke-linejoin="round"/>
+        <line x1="280" y1="405" x2="280" y2="440" stroke="#8a6a45" stroke-width="4"/>
+        <polygon points="264,405 296,405 288,428 272,428" fill="#ffffff" stroke="#8a6a45" stroke-width="2"/>
+        <circle cx="300" cy="368" r="6" fill="#ff5b7f"/>
+        <circle cx="312" cy="378" r="5" fill="#ffd93d"/>
+        <circle cx="296" cy="382" r="5" fill="#4fb4ef"/>
+        <g class="puku-idle" style="animation-delay:0.4s">
+          <ellipse cx="252" cy="425" rx="16" ry="13" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <ellipse cx="238" cy="420" rx="6" ry="9" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="2.5" class="wave-arm" style="animation-delay:0.15s"/>
+          <circle cx="252" cy="402" r="15" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <circle cx="248" cy="401" r="2" fill="#2B2B3A"/>
+          <circle cx="256" cy="401" r="2" fill="#2B2B3A"/>
+        </g>
+        <text class="label" x="280" y="465">おえかき</text>
+      </g>
+
+      <!-- ============ こうえん（おそうじ） ============ -->
+      <g class="spot" data-href="pukuchan_clean.html" style="animation-delay:0.15s">
+        <circle cx="110" cy="510" r="66" fill="transparent"/>
+        <rect x="103" y="500" width="6" height="30" fill="#8a6a45"/>
+        <circle cx="106" cy="480" r="26" fill="#6fcf7f" stroke="#3c9c56" stroke-width="3"/>
+        <circle cx="88" cy="492" r="17" fill="#7fdb8d" stroke="#3c9c56" stroke-width="3"/>
+        <circle cx="126" cy="494" r="17" fill="#7fdb8d" stroke="#3c9c56" stroke-width="3"/>
+        <rect x="140" y="522" width="34" height="6" rx="3" fill="#c9a86a"/>
+        <rect x="142" y="512" width="4" height="14" fill="#8a6a45"/>
+        <rect x="168" y="512" width="4" height="14" fill="#8a6a45"/>
+        <g class="puku-idle" style="animation-delay:0.25s">
+          <ellipse cx="150" cy="500" rx="16" ry="13" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <ellipse cx="164" cy="495" rx="6" ry="9" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="2.5" class="wave-arm" style="animation-delay:0.35s"/>
+          <circle cx="150" cy="477" r="15" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <circle cx="146" cy="476" r="2" fill="#2B2B3A"/>
+          <circle cx="154" cy="476" r="2" fill="#2B2B3A"/>
+        </g>
+        <text class="label" x="115" y="555">こうえん</text>
+      </g>
+
+      <!-- ============ おふろやさん ============ -->
+      <g class="spot" data-href="pukuchan_bath.html" style="animation-delay:0.2s">
+        <circle cx="280" cy="620" r="66" fill="transparent"/>
+        <rect x="248" y="600" width="64" height="48" rx="8" fill="#eaf9ff" stroke="#4fb4ef" stroke-width="3"/>
+        <rect x="272" y="580" width="14" height="20" rx="4" fill="#dceffb" stroke="#4fb4ef" stroke-width="2.5"/>
+        <g class="steam" style="animation-delay:0s"><ellipse cx="279" cy="570" rx="5" ry="7" fill="#ffffff" opacity="0.85"/></g>
+        <g class="steam" style="animation-delay:0.8s"><ellipse cx="279" cy="570" rx="5" ry="7" fill="#ffffff" opacity="0.85"/></g>
+        <path d="M254,624 q7,-10 14,0 q7,-10 14,0 q7,-10 14,0 q7,-10 14,0" fill="none" stroke="#4fb4ef" stroke-width="3" stroke-linecap="round"/>
+        <path d="M270,634 a4,4 0 1 0 8,0 a4,3 0 1 1 -8,0" fill="#8fd7ff"/>
+        <g class="puku-idle" style="animation-delay:0.5s">
+          <ellipse cx="252" cy="645" rx="16" ry="13" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <ellipse cx="238" cy="640" rx="6" ry="9" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="2.5" class="wave-arm" style="animation-delay:0.05s"/>
+          <circle cx="252" cy="622" r="15" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <circle cx="248" cy="621" r="2" fill="#2B2B3A"/>
+          <circle cx="256" cy="621" r="2" fill="#2B2B3A"/>
+        </g>
+        <text class="label" x="280" y="675">おふろ</text>
+      </g>
+
+      <!-- ============ やたい（ごはん） ============ -->
+      <g class="spot" data-href="pukuchan_food.html" style="animation-delay:0.25s">
+        <circle cx="110" cy="730" r="66" fill="transparent"/>
+        <rect x="84" y="722" width="52" height="30" rx="4" fill="#fff6da" stroke="#c98a45" stroke-width="3"/>
+        <circle cx="90" cy="758" r="7" fill="#5a4a3a"/>
+        <circle cx="130" cy="758" r="7" fill="#5a4a3a"/>
+        <polygon points="78,722 84,700 96,722" fill="#ff9f45" stroke="#c98a45" stroke-width="2" stroke-linejoin="round"/>
+        <polygon points="96,722 102,700 114,722" fill="#ffffff" stroke="#c98a45" stroke-width="2" stroke-linejoin="round"/>
+        <polygon points="114,722 120,700 132,722" fill="#ff9f45" stroke="#c98a45" stroke-width="2" stroke-linejoin="round"/>
+        <polygon points="103,706 118,706 110,690" fill="#ffffff" stroke="#3C8F6C" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="106" y="706" width="8" height="6" fill="#2B2B3A" opacity="0.85"/>
+        <g class="puku-idle" style="animation-delay:0.6s">
+          <ellipse cx="150" cy="742" rx="16" ry="13" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <ellipse cx="164" cy="736" rx="6" ry="9" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="2.5" class="wave-arm" style="animation-delay:0.45s"/>
+          <circle cx="150" cy="719" r="15" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+          <circle cx="146" cy="718" r="2" fill="#2B2B3A"/>
+          <circle cx="154" cy="718" r="2" fill="#2B2B3A"/>
+        </g>
+        <text class="label" x="115" y="790">ごはん</text>
+      </g>
+
+      <!-- ============ おうち（おどろう） ============ -->
+      <g class="spot" data-href="pukuchan_dance.html" style="animation-delay:0.3s">
+        <circle cx="195" cy="800" r="95" fill="transparent"/>
+        <rect x="150" y="800" width="90" height="66" rx="4" fill="#fff6da" stroke="#c9a86a" stroke-width="3"/>
+        <polygon points="140,800 195,758 250,800" fill="#ff9fc0" stroke="#c9a86a" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="185" y="832" width="20" height="34" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+        <circle cx="200" cy="849" r="2.4" fill="#3C8F6C"/>
+        <circle cx="165" cy="818" r="9" fill="#eaf9ff" stroke="#c9a86a" stroke-width="2.5"/>
+        <path d="M161,818 q4,5 8,0" stroke="#ff5b7f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <circle cx="225" cy="818" r="9" fill="#eaf9ff" stroke="#c9a86a" stroke-width="2.5"/>
+        <path d="M221,815 l8,6 M229,815 l-8,6" stroke="#ffd93d" stroke-width="2" stroke-linecap="round"/>
+        <g class="puku-idle" style="animation-delay:0s">
+          <ellipse cx="150" cy="850" rx="20" ry="16" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3.5"/>
+          <ellipse cx="132" cy="842" rx="7" ry="11" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3" class="wave-arm" style="animation-delay:0s"/>
+          <circle cx="150" cy="822" r="18" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3.5"/>
+          <circle cx="145" cy="821" r="2.4" fill="#2B2B3A"/>
+          <circle cx="155" cy="821" r="2.4" fill="#2B2B3A"/>
+          <path d="M144,829 q6,5 12,0" stroke="#2B2B3A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+        <text class="label" x="195" y="885">おうち</text>
+      </g>
+
+      <text id="appTitle" x="195" y="34">ぷくちゃんの まち</text>
+    </svg>
   </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var spots = document.querySelectorAll(".spot");
+
+  spots.forEach(function (spot) {
+    var triggered = false;
+    function go() {
+      if (triggered) { return; }
+      triggered = true;
+      spot.classList.add("bounce");
+      var href = spot.getAttribute("data-href");
+      setTimeout(function () {
+        window.location.href = href;
+      }, 430);
+    }
+    spot.addEventListener("pointerdown", go);
+  });
+})();
+</script>
 </body>
 </html>
