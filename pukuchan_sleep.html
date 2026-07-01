@@ -259,7 +259,7 @@
   var LULLABY = [392.00, 329.63, 261.63, 293.66, 329.63, 261.63, 293.66, 196.00];
   var STEP_MS = 800;
   var PATS_PER_STAGE = 3;
-  var FADE_DURATION_MS = 30000;
+  var FADE_DURATION_MS = 8000;
 
   var app = document.getElementById("app");
   var hint = document.getElementById("hint");
@@ -475,14 +475,20 @@
   }
 
   function handlePat(x, y) {
+    if (asleep) {
+      if (fadeTimeoutId) {
+        clearTimeout(fadeTimeoutId);
+        fadeTimeoutId = null;
+      }
+      resetScene();
+      return;
+    }
     ensureLullabyStarted();
     hint.classList.add("faded");
     spawnPatEffect(x, y);
-    if (!asleep) {
-      patCount++;
-      pulseCharacter();
-      updateStage();
-    }
+    patCount++;
+    pulseCharacter();
+    updateStage();
   }
 
   eyesGroup.innerHTML = stageEyesSVG(0);
