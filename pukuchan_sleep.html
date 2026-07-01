@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ぷくちゃん ねんねしようね</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Rounded Mplus 1c", sans-serif;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: linear-gradient(180deg, #0b1533 0%, #16234f 55%, #24325c 100%);
+  }
+
+  #hint {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 2vh 4vw 1vh 4vw;
+    color: rgba(230, 225, 255, 0.65);
+    font-size: clamp(14px, 4vw, 20px);
+    font-weight: 700;
+    transition: opacity 0.6s ease;
+  }
+  #hint.faded { opacity: 0.15; }
+
+  #sceneArea {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .star-bg {
+    position: absolute;
+    border-radius: 50%;
+    background: #ffffff;
+    opacity: 0.7;
+    animation: twinkle 3s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 60;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.15; }
+    50%      { opacity: 1; }
+  }
+
+  .moon {
+    position: absolute;
+    top: 6%;
+    right: 10%;
+    width: 18vw;
+    max-width: 90px;
+    height: 18vw;
+    max-height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fffaea, #ffe9b3 75%);
+    box-shadow: 0 0 40px 12px rgba(255, 240, 200, 0.3);
+    pointer-events: none;
+  }
+
+  #sleepPosWrap {
+    position: absolute;
+    left: 50%;
+    bottom: 16%;
+    transform: translateX(-50%);
+    width: min(88vw, 72vh);
+    aspect-ratio: 340 / 260;
+    z-index: 2;
+  }
+  #sleepPulseWrap { width: 100%; height: 100%; }
+  #sleepSvg { width: 100%; height: 100%; display: block; }
+
+  .pat-pulse { animation: patPulse 0.35s ease; }
+  @keyframes patPulse {
+    0%   { transform: scale(1, 1); }
+    40%  { transform: scale(1.03, 0.97); }
+    100% { transform: scale(1, 1); }
+  }
+
+  .zzz {
+    position: absolute;
+    top: -12%;
+    right: 14%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .zzz.show { opacity: 1; }
+  .zzz span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: 900;
+    color: #eef1ff;
+    opacity: 0;
+  }
+  .zzz.show span:nth-child(1) { animation: zzzFloat 2.4s infinite; animation-delay: 0s; font-size: 16px; }
+  .zzz.show span:nth-child(2) { animation: zzzFloat 2.4s infinite; animation-delay: 0.6s; font-size: 22px; left: 10px; }
+  .zzz.show span:nth-child(3) { animation: zzzFloat 2.4s infinite; animation-delay: 1.2s; font-size: 28px; left: 20px; }
+  @keyframes zzzFloat {
+    0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translate(22px, -70px) scale(1.3); opacity: 0; }
+  }
+
+  .sleep-star {
+    position: absolute;
+    top: -5%;
+    font-size: 4.5vw;
+    pointer-events: none;
+    animation-name: starFall;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    z-index: 60;
+  }
+
+  #fadeOverlay {
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+  }
+  @keyframes starFall {
+    to { transform: translateY(95vh) rotate(200deg); opacity: 0.15; }
+  }
+
+  .pat-effect {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 6vw;
+    pointer-events: none;
+    animation: patEffectPop 0.6s ease-out forwards;
+    z-index: 4;
+  }
+  @keyframes patEffectPop {
+    0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; }
+    60%  { transform: translate(-50%, -65%) scale(1.05); opacity: 0.9; }
+    100% { transform: translate(-50%, -85%) scale(0.8); opacity: 0; }
+  }
+
+  .bubble {
+    position: absolute;
+    top: 4%;
+    left: 50%;
+    transform: translate(-50%, 10px) scale(0.85);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    background: #fbf8ff;
+    border-radius: 22px;
+    padding: 1.5vh 5vw;
+    font-size: clamp(17px, 4.8vw, 27px);
+    font-weight: 800;
+    color: #4a4560;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+    max-width: 80%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 6;
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 12px 10px 0 10px;
+    border-style: solid;
+    border-color: #fbf8ff transparent transparent transparent;
+  }
+  .bubble.show {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+</style>
+</head>
+<body>
+
+  <div id="app">
+    <div id="hint">やさしく トントン してね</div>
+
+    <div id="sceneArea">
+      <div class="moon"></div>
+
+      <div id="sleepPosWrap">
+        <div id="sleepPulseWrap">
+          <svg id="sleepSvg" viewBox="0 0 340 260" xmlns="http://www.w3.org/2000/svg">
+            <!-- ふとん -->
+            <rect x="20" y="160" width="300" height="80" rx="40" fill="#E9A9C7" stroke="#B96E93" stroke-width="4"/>
+            <!-- まくら -->
+            <ellipse cx="262" cy="150" rx="58" ry="28" fill="#FFF6DA" stroke="#E3CE9B" stroke-width="3"/>
+            <!-- しっぽの先っぽ -->
+            <path d="M60,205 Q42,195 44,175 Q56,182 66,176 Q70,192 60,205 Z" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+            <!-- おふとん(かけぶとん) -->
+            <rect x="45" y="115" width="210" height="85" rx="42" fill="#F4B860" stroke="#C98A3C" stroke-width="4"/>
+            <path d="M75,140 Q160,122 245,140" stroke="#C98A3C" stroke-width="2" fill="none" stroke-dasharray="6 6" opacity="0.6"/>
+            <path d="M75,158 Q160,142 245,158" stroke="#C98A3C" stroke-width="2" fill="none" stroke-dasharray="6 6" opacity="0.6"/>
+            <!-- ちいさなて -->
+            <ellipse cx="195" cy="123" rx="16" ry="13" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3"/>
+
+            <!-- あたま -->
+            <g id="sleepHead">
+              <circle cx="250" cy="118" r="60" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="5"/>
+
+              <!-- あたまのトゲトゲ -->
+              <polygon points="234,68 248,48 252,72" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+              <polygon points="250,66 264,47 268,71" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+              <!-- ほっぺ -->
+              <ellipse cx="208" cy="140" rx="11" ry="7" fill="#FF9EB5" opacity="0.6"/>
+              <ellipse cx="292" cy="140" rx="11" ry="7" fill="#FF9EB5" opacity="0.6"/>
+
+              <!-- め(ステージにより差し替え) -->
+              <g id="eyesGroup"></g>
+
+              <!-- くち -->
+              <path d="M240,150 Q250,158 260,150" stroke="#2B2B3A" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="zzz" id="zzz">
+          <span>Z</span><span>Z</span><span>Z</span>
+        </div>
+      </div>
+
+      <div id="speechBubble" class="bubble"></div>
+    </div>
+  </div>
+
+  <div id="fadeOverlay"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PAT_PHRASE = "きもちいい…";
+  var SLEEPY_PHRASE = "ねむい…";
+  var GOODNIGHT_PHRASE = "おやすみ…";
+
+  var LULLABY = [392.00, 329.63, 261.63, 293.66, 329.63, 261.63, 293.66, 196.00];
+  var STEP_MS = 800;
+  var PATS_PER_STAGE = 3;
+  var FADE_DURATION_MS = 30000;
+
+  var app = document.getElementById("app");
+  var hint = document.getElementById("hint");
+  var sceneArea = document.getElementById("sceneArea");
+  var sleepPosWrap = document.getElementById("sleepPosWrap");
+  var sleepPulseWrap = document.getElementById("sleepPulseWrap");
+  var eyesGroup = document.getElementById("eyesGroup");
+  var zzz = document.getElementById("zzz");
+  var bubble = document.getElementById("speechBubble");
+  var fadeOverlay = document.getElementById("fadeOverlay");
+
+  var audioCtx = null;
+  var masterGain = null;
+  var lullabyPlaying = false;
+  var lullabyTimer = null;
+  var lullabyStep = 0;
+
+  var patCount = 0;
+  var currentStage = 0;
+  var asleep = false;
+  var hideBubbleTimer = null;
+  var sleepStarInterval = null;
+  var fadeTimeoutId = null;
+
+  function randChoice(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) {
+        audioCtx = new Ctx();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 1;
+        masterGain.connect(audioCtx.destination);
+      }
+    }
+    return audioCtx;
+  }
+
+  function playTone(freq, durationSec, volume) {
+    var ctx = ensureAudio();
+    if (!ctx || !masterGain) { return; }
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(masterGain);
+    var now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+    osc.start(now);
+    osc.stop(now + durationSec);
+  }
+
+  function lullabyStepFn() {
+    var note = LULLABY[lullabyStep % LULLABY.length];
+    playTone(note, (STEP_MS / 1000) * 1.1, 0.16);
+    if (lullabyStep % 4 === 0) {
+      playTone(note / 2, (STEP_MS / 1000) * 1.1, 0.08);
+    }
+    lullabyStep++;
+  }
+
+  function ensureLullabyStarted() {
+    var ctx = ensureAudio();
+    if (!ctx) { return; }
+    if (ctx.state === "suspended") { ctx.resume(); }
+    if (lullabyPlaying) { return; }
+    lullabyPlaying = true;
+    lullabyStep = 0;
+    lullabyStepFn();
+    lullabyTimer = setInterval(lullabyStepFn, STEP_MS);
+  }
+
+  function eyeOpen(cx) {
+    var dx = cx < 250 ? 4 : -4;
+    return '<ellipse cx="' + cx + '" cy="120" rx="16" ry="19" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>' +
+      '<circle cx="' + (cx + dx) + '" cy="124" r="7.5" fill="#2B2B3A"/>' +
+      '<circle cx="' + (cx + dx * 2) + '" cy="116" r="3" fill="#FFFFFF"/>';
+  }
+  function eyeHalf(cx) {
+    var dx = cx < 250 ? 3 : -3;
+    return '<ellipse cx="' + cx + '" cy="126" rx="16" ry="11" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>' +
+      '<circle cx="' + (cx + dx) + '" cy="128" r="6.5" fill="#2B2B3A"/>' +
+      '<circle cx="' + (cx + dx * 2) + '" cy="123" r="2.5" fill="#FFFFFF"/>';
+  }
+  function eyeDrowsy(cx) {
+    var dx = cx < 250 ? 3 : -3;
+    return '<ellipse cx="' + cx + '" cy="130" rx="15" ry="4" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2"/>' +
+      '<ellipse cx="' + (cx + dx) + '" cy="130" rx="4" ry="3" fill="#2B2B3A"/>';
+  }
+  function eyeClosed(cx) {
+    return '<path d="M' + (cx - 14) + ',128 Q' + cx + ',138 ' + (cx + 14) + ',128" stroke="#2B2B3A" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
+  }
+
+  function stageEyesSVG(stage) {
+    if (stage === 0) { return eyeOpen(228) + eyeOpen(272); }
+    if (stage === 1) { return eyeHalf(228) + eyeHalf(272); }
+    if (stage === 2) { return eyeDrowsy(228) + eyeDrowsy(272); }
+    return eyeClosed(228) + eyeClosed(272);
+  }
+
+  function showSpeech(text) {
+    clearTimeout(hideBubbleTimer);
+    bubble.textContent = text;
+    bubble.classList.add("show");
+    hideBubbleTimer = setTimeout(function () {
+      bubble.classList.remove("show");
+    }, 1600);
+  }
+
+  function pulseCharacter() {
+    sleepPulseWrap.classList.remove("pat-pulse");
+    void sleepPulseWrap.offsetWidth;
+    sleepPulseWrap.classList.add("pat-pulse");
+  }
+
+  function spawnPatEffect(x, y) {
+    var rect = sceneArea.getBoundingClientRect();
+    var el = document.createElement("div");
+    el.className = "pat-effect";
+    el.textContent = Math.random() < 0.5 ? "✨" : "💗";
+    el.style.left = (x - rect.left) + "px";
+    el.style.top = (y - rect.top) + "px";
+    sceneArea.appendChild(el);
+    el.addEventListener("animationend", function () { el.remove(); });
+  }
+
+  function spawnSleepStar() {
+    var el = document.createElement("div");
+    el.className = "sleep-star";
+    el.textContent = randChoice(["⭐", "✨", "🌟"]);
+    el.style.left = (Math.random() * 100) + "%";
+    el.style.animationDuration = (2.6 + Math.random() * 2) + "s";
+    sceneArea.appendChild(el);
+    el.addEventListener("animationend", function () { el.remove(); });
+  }
+
+  function startSleepEffects() {
+    zzz.classList.add("show");
+    if (!sleepStarInterval) {
+      spawnSleepStar();
+      sleepStarInterval = setInterval(spawnSleepStar, 550);
+    }
+  }
+
+  function startFadeOut() {
+    fadeOverlay.style.transition = "opacity " + (FADE_DURATION_MS / 1000) + "s linear";
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        fadeOverlay.style.opacity = "1";
+      });
+    });
+
+    var ctx = ensureAudio();
+    if (ctx && masterGain) {
+      var now = ctx.currentTime;
+      masterGain.gain.cancelScheduledValues(now);
+      masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+      masterGain.gain.linearRampToValueAtTime(0, now + FADE_DURATION_MS / 1000);
+    }
+
+    fadeTimeoutId = setTimeout(resetScene, FADE_DURATION_MS);
+  }
+
+  function resetScene() {
+    clearInterval(lullabyTimer);
+    lullabyTimer = null;
+    lullabyPlaying = false;
+    if (audioCtx && masterGain) {
+      masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      masterGain.gain.setValueAtTime(1, audioCtx.currentTime);
+    }
+
+    clearInterval(sleepStarInterval);
+    sleepStarInterval = null;
+    var leftovers = sceneArea.querySelectorAll(".sleep-star, .pat-effect");
+    leftovers.forEach(function (el) { el.remove(); });
+    bubble.classList.remove("show");
+    zzz.classList.remove("show");
+
+    patCount = 0;
+    currentStage = 0;
+    asleep = false;
+    eyesGroup.innerHTML = stageEyesSVG(0);
+    hint.classList.remove("faded");
+
+    fadeOverlay.style.transition = "opacity 1.5s ease";
+    void fadeOverlay.offsetWidth;
+    fadeOverlay.style.opacity = "0";
+  }
+
+  function updateStage() {
+    var newStage = Math.min(3, Math.floor(patCount / PATS_PER_STAGE));
+    if (newStage === currentStage) { return; }
+    currentStage = newStage;
+    eyesGroup.innerHTML = stageEyesSVG(currentStage);
+
+    if (currentStage === 3) {
+      asleep = true;
+      showSpeech(GOODNIGHT_PHRASE);
+      startSleepEffects();
+      startFadeOut();
+    } else if (currentStage === 2) {
+      if (Math.random() < 0.8) { showSpeech(SLEEPY_PHRASE); }
+    } else if (currentStage === 1) {
+      if (Math.random() < 0.8) { showSpeech(PAT_PHRASE); }
+    }
+  }
+
+  function handlePat(x, y) {
+    ensureLullabyStarted();
+    hint.classList.add("faded");
+    spawnPatEffect(x, y);
+    if (!asleep) {
+      patCount++;
+      pulseCharacter();
+      updateStage();
+    }
+  }
+
+  eyesGroup.innerHTML = stageEyesSVG(0);
+
+  sceneArea.addEventListener("pointerdown", function (e) {
+    handlePat(e.clientX, e.clientY);
+  });
+})();
+</script>
+<script>
+(function () {
+  var sceneArea = document.getElementById("sceneArea");
+  var count = 46;
+  for (var i = 0; i < count; i++) {
+    var el = document.createElement("div");
+    el.className = "star-bg";
+    var size = 1 + Math.random() * 2;
+    el.style.width = size + "px";
+    el.style.height = size + "px";
+    el.style.left = (Math.random() * 100) + "%";
+    el.style.top = (Math.random() * 85) + "%";
+    el.style.animationDelay = (Math.random() * 3) + "s";
+    el.style.animationDuration = (2 + Math.random() * 2.5) + "s";
+    sceneArea.appendChild(el);
+  }
+})();
+</script>
+</body>
+</html>
