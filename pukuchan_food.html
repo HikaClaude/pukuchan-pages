@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ぷくちゃんの ごはん</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+    font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Rounded Mplus 1c", sans-serif;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: linear-gradient(135deg, #ffe3c9, #ffd3e0, #fff6b7);
+  }
+
+  #title {
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: clamp(20px, 6vw, 32px);
+    font-weight: 900;
+    color: #7a5230;
+    padding: 2vh 0 0.5vh 0;
+    text-shadow: 0 2px 0 rgba(255,255,255,0.6);
+  }
+
+  #characterArea {
+    position: relative;
+    flex: 1;
+    touch-action: none;
+  }
+
+  .ground-shadow {
+    position: absolute;
+    bottom: 17%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42vw;
+    max-width: 230px;
+    height: 5vh;
+    max-height: 26px;
+    background: radial-gradient(ellipse at center, rgba(20, 40, 30, 0.3), rgba(20, 40, 30, 0));
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  #pukuReactWrap {
+    position: absolute;
+    left: 50%;
+    bottom: 13%;
+    transform: translateX(-50%);
+    width: min(64vw, 50vh);
+    aspect-ratio: 300 / 320;
+    z-index: 2;
+  }
+  #pukuDanceWrap { width: 100%; height: 100%; }
+  #pukuSvg { width: 100%; height: 100%; display: block; }
+
+  #pukuDanceWrap.idle { animation: idleBob 2.2s ease-in-out infinite; }
+  @keyframes idleBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2%); }
+  }
+
+  #pukuHead #cheekLeft, #pukuHead #cheekRight { transition: opacity 0.25s ease; }
+  #pukuHead.blush #cheekLeft, #pukuHead.blush #cheekRight { opacity: 1; }
+
+  #pukuReactWrap.react-jump { animation: reactJump 0.6s ease; }
+  @keyframes reactJump {
+    0%   { transform: translateX(-50%) translateY(0) scale(1, 1); }
+    30%  { transform: translateX(-50%) translateY(0) scale(1.15, 0.8); }
+    55%  { transform: translateX(-50%) translateY(-32%) scale(0.85, 1.15); }
+    80%  { transform: translateX(-50%) translateY(0) scale(1.1, 0.85); }
+    100% { transform: translateX(-50%) translateY(0) scale(1, 1); }
+  }
+
+  .mouth-target {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    width: 26%;
+    height: 22%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+  }
+
+  .food {
+    position: absolute;
+    font-size: min(15vw, 84px);
+    line-height: 1;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    transition: left 0.25s ease, top 0.25s ease;
+    touch-action: none;
+    cursor: grab;
+  }
+  .food.dragging {
+    transition: none;
+    z-index: 8;
+  }
+  .food.eaten {
+    animation: eatPop 0.35s ease forwards;
+  }
+  @keyframes eatPop {
+    0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
+  }
+
+  .effect {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 9vw;
+    pointer-events: none;
+    animation: effectPop 0.9s ease-out forwards;
+    z-index: 9;
+  }
+  @keyframes effectPop {
+    0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+    60%  { transform: translate(-50%, -80%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, -160%) scale(0.9); opacity: 0; }
+  }
+
+  .bubble {
+    position: absolute;
+    top: 6%;
+    left: 50%;
+    transform: translate(-50%, 10px) scale(0.85);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 1.6vh 5vw;
+    font-size: clamp(18px, 5.2vw, 30px);
+    font-weight: 800;
+    color: #555;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    max-width: 82%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 13px 11px 0 11px;
+    border-style: solid;
+    border-color: #ffffff transparent transparent transparent;
+  }
+  .bubble.show {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  #hint {
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: clamp(14px, 4vw, 20px);
+    font-weight: 700;
+    color: #8a6a4a;
+    padding: 1vh 4vw calc(2vh + env(safe-area-inset-bottom)) 4vw;
+  }
+</style>
+</head>
+<body>
+
+  <div id="app">
+    <div id="title">🍙 ぷくちゃんの ごはん 🍎</div>
+
+    <div id="characterArea">
+      <div class="ground-shadow"></div>
+
+      <div id="pukuReactWrap">
+        <div id="pukuDanceWrap" class="idle">
+          <svg id="pukuSvg" viewBox="0 0 300 320" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="212" cy="255" rx="24" ry="15" transform="rotate(30 212 255)" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+            <polygon points="228,238 244,232 236,250" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+            <ellipse cx="116" cy="298" rx="28" ry="18" fill="#5FCB93" stroke="#3C8F6C" stroke-width="4"/>
+            <ellipse cx="184" cy="298" rx="28" ry="18" fill="#5FCB93" stroke="#3C8F6C" stroke-width="4"/>
+
+            <polygon points="196,205 210,190 214,212" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+            <polygon points="205,230 220,218 221,238" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+            <ellipse cx="150" cy="220" rx="76" ry="68" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="5"/>
+            <ellipse cx="150" cy="240" rx="44" ry="36" fill="#FFF6DA"/>
+
+            <ellipse id="armLeft" cx="78" cy="215" rx="20" ry="30" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+            <ellipse id="armRight" cx="222" cy="215" rx="20" ry="30" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+
+            <g id="pukuHead">
+              <circle cx="150" cy="105" r="70" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="5"/>
+
+              <polygon points="132,46 148,26 152,50" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+              <polygon points="150,44 165,25 170,50" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+              <ellipse id="cheekLeft" cx="106" cy="132" rx="13" ry="8" fill="#FF9EB5" opacity="0.6"/>
+              <ellipse id="cheekRight" cx="194" cy="132" rx="13" ry="8" fill="#FF9EB5" opacity="0.6"/>
+
+              <ellipse cx="126" cy="108" rx="19" ry="23" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>
+              <ellipse cx="174" cy="108" rx="19" ry="23" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>
+              <circle cx="130" cy="113" r="9" fill="#2B2B3A"/>
+              <circle cx="170" cy="113" r="9" fill="#2B2B3A"/>
+              <circle cx="135" cy="104" r="3.5" fill="#FFFFFF"/>
+              <circle cx="175" cy="104" r="3.5" fill="#FFFFFF"/>
+
+              <path id="mouthClosed" d="M136,142 Q150,154 164,142" stroke="#2B2B3A" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <ellipse id="mouthOpen" cx="150" cy="146" rx="16" ry="14" fill="#7A4B4B" stroke="#2B2B3A" stroke-width="3" style="display:none"/>
+            </g>
+          </svg>
+        </div>
+        <div class="mouth-target" id="mouthTarget"></div>
+      </div>
+
+      <div id="speechBubble" class="bubble"></div>
+    </div>
+
+    <div id="hint">たべものを ぷくちゃんの おくちまで はこんでね</div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var FOOD_EMOJI = ["🍙", "🍎", "🍰"];
+  var EAT_PHRASES = ["おいしい！", "もっとほしい！", "んー、おいしい！", "ぱくぱく！", "しあわせ〜"];
+  var HEART_EMOJI = ["💖", "💗", "💕", "✨", "💛"];
+  var MAX_FOOD = 3;
+
+  var characterArea = document.getElementById("characterArea");
+  var pukuReactWrap = document.getElementById("pukuReactWrap");
+  var pukuHead = document.getElementById("pukuHead");
+  var mouthTarget = document.getElementById("mouthTarget");
+  var mouthClosed = document.getElementById("mouthClosed");
+  var mouthOpen = document.getElementById("mouthOpen");
+  var bubble = document.getElementById("speechBubble");
+
+  var hideBubbleTimer = null;
+  var blushTimer = null;
+  var mouthTimer = null;
+
+  function randChoice(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function showSpeech(text) {
+    clearTimeout(hideBubbleTimer);
+    bubble.textContent = text;
+    bubble.classList.add("show");
+    hideBubbleTimer = setTimeout(function () {
+      bubble.classList.remove("show");
+    }, 1400);
+  }
+
+  function spawnEffectAtMouth() {
+    var rect = characterArea.getBoundingClientRect();
+    var mRect = mouthTarget.getBoundingClientRect();
+    var x = mRect.left + mRect.width / 2 - rect.left;
+    var y = mRect.top + mRect.height / 2 - rect.top;
+    var count = 3;
+    for (var i = 0; i < count; i++) {
+      (function (i) {
+        setTimeout(function () {
+          var el = document.createElement("div");
+          el.className = "effect";
+          el.textContent = randChoice(HEART_EMOJI);
+          el.style.left = (x + (Math.random() * 40 - 20)) + "px";
+          el.style.top = (y + (Math.random() * 20 - 10)) + "px";
+          characterArea.appendChild(el);
+          el.addEventListener("animationend", function () { el.remove(); });
+        }, i * 90);
+      })(i);
+    }
+  }
+
+  function chew() {
+    clearTimeout(mouthTimer);
+    mouthClosed.style.display = "none";
+    mouthOpen.style.display = "";
+    mouthTimer = setTimeout(function () {
+      mouthOpen.style.display = "none";
+      mouthClosed.style.display = "";
+    }, 260);
+  }
+
+  function blush() {
+    clearTimeout(blushTimer);
+    pukuHead.classList.add("blush");
+    blushTimer = setTimeout(function () {
+      pukuHead.classList.remove("blush");
+    }, 700);
+  }
+
+  function reactJump() {
+    pukuReactWrap.classList.remove("react-jump");
+    void pukuReactWrap.offsetWidth;
+    pukuReactWrap.classList.add("react-jump");
+  }
+  pukuReactWrap.addEventListener("animationend", function (e) {
+    if (e.animationName === "reactJump") {
+      pukuReactWrap.classList.remove("react-jump");
+    }
+  });
+
+  function randomPosition() {
+    var w = characterArea.clientWidth;
+    var h = characterArea.clientHeight;
+    var margin = 0.12;
+    var zones = [
+      { xMin: margin, xMax: 0.34, yMin: 0.08, yMax: 0.35 },
+      { xMin: 0.66, xMax: 1 - margin, yMin: 0.08, yMax: 0.35 },
+      { xMin: margin, xMax: 0.3, yMin: 0.4, yMax: 0.6 },
+      { xMin: 0.7, xMax: 1 - margin, yMin: 0.4, yMax: 0.6 }
+    ];
+    var z = randChoice(zones);
+    var xf = z.xMin + Math.random() * (z.xMax - z.xMin);
+    var yf = z.yMin + Math.random() * (z.yMax - z.yMin);
+    return { x: xf * w, y: yf * h };
+  }
+
+  function createFood() {
+    var el = document.createElement("div");
+    el.className = "food";
+    el.textContent = randChoice(FOOD_EMOJI);
+    var pos = randomPosition();
+    el.style.left = pos.x + "px";
+    el.style.top = pos.y + "px";
+    el.dataset.homeX = pos.x;
+    el.dataset.homeY = pos.y;
+    characterArea.appendChild(el);
+    attachDrag(el);
+    return el;
+  }
+
+  function attachDrag(el) {
+    var dragging = false;
+    var offsetX = 0, offsetY = 0;
+
+    el.addEventListener("pointerdown", function (e) {
+      dragging = true;
+      el.classList.add("dragging");
+      el.setPointerCapture(e.pointerId);
+      var rect = characterArea.getBoundingClientRect();
+      offsetX = e.clientX - rect.left - parseFloat(el.style.left);
+      offsetY = e.clientY - rect.top - parseFloat(el.style.top);
+    });
+
+    el.addEventListener("pointermove", function (e) {
+      if (!dragging) { return; }
+      var rect = characterArea.getBoundingClientRect();
+      var x = e.clientX - rect.left - offsetX;
+      var y = e.clientY - rect.top - offsetY;
+      el.style.left = x + "px";
+      el.style.top = y + "px";
+    });
+
+    function endDrag(e) {
+      if (!dragging) { return; }
+      dragging = false;
+      el.classList.remove("dragging");
+
+      var foodRect = el.getBoundingClientRect();
+      var mouthRect = mouthTarget.getBoundingClientRect();
+      var fx = foodRect.left + foodRect.width / 2;
+      var fy = foodRect.top + foodRect.height / 2;
+      var overlap = fx > mouthRect.left && fx < mouthRect.right && fy > mouthRect.top && fy < mouthRect.bottom;
+
+      if (overlap) {
+        el.classList.add("eaten");
+        chew();
+        blush();
+        spawnEffectAtMouth();
+        showSpeech(randChoice(EAT_PHRASES));
+        if (Math.random() < 0.5) { reactJump(); }
+        setTimeout(function () {
+          el.remove();
+          createFood();
+        }, 320);
+      } else {
+        el.style.left = el.dataset.homeX + "px";
+        el.style.top = el.dataset.homeY + "px";
+      }
+    }
+
+    el.addEventListener("pointerup", endDrag);
+    el.addEventListener("pointercancel", endDrag);
+  }
+
+  for (var i = 0; i < MAX_FOOD; i++) {
+    createFood();
+  }
+})();
+</script>
+</body>
+</html>

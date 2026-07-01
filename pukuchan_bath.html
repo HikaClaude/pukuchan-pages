@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ぷくちゃんの おふろ</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+    font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Rounded Mplus 1c", sans-serif;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: linear-gradient(135deg, #c9f0ff, #e5faff, #d5ffe8);
+  }
+
+  #title {
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: clamp(20px, 6vw, 32px);
+    font-weight: 900;
+    color: #2c6f8a;
+    padding: 2vh 0 0.5vh 0;
+    text-shadow: 0 2px 0 rgba(255,255,255,0.6);
+  }
+
+  #characterArea {
+    position: relative;
+    flex: 1;
+    touch-action: none;
+  }
+
+  .ground-shadow {
+    position: absolute;
+    bottom: 17%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42vw;
+    max-width: 230px;
+    height: 5vh;
+    max-height: 26px;
+    background: radial-gradient(ellipse at center, rgba(20, 60, 80, 0.25), rgba(20, 60, 80, 0));
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  #pukuReactWrap {
+    position: absolute;
+    left: 50%;
+    bottom: 15%;
+    transform: translateX(-50%);
+    width: min(70vw, 56vh);
+    aspect-ratio: 300 / 320;
+    z-index: 2;
+  }
+  #pukuDanceWrap { width: 100%; height: 100%; }
+  #pukuSvg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+  #pukuDanceWrap.idle { animation: idleBob 2.4s ease-in-out infinite; }
+  @keyframes idleBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2%); }
+  }
+
+  #pukuReactWrap.react-jump { animation: reactJump 0.6s ease; }
+  @keyframes reactJump {
+    0%   { transform: translateX(-50%) translateY(0) scale(1, 1); }
+    30%  { transform: translateX(-50%) translateY(0) scale(1.15, 0.8); }
+    55%  { transform: translateX(-50%) translateY(-32%) scale(0.85, 1.15); }
+    80%  { transform: translateX(-50%) translateY(0) scale(1.1, 0.85); }
+    100% { transform: translateX(-50%) translateY(0) scale(1, 1); }
+  }
+  #pukuReactWrap.react-spin { animation: reactSpin 0.7s ease; }
+  @keyframes reactSpin {
+    from { transform: translateX(-50%) rotate(0deg); }
+    to   { transform: translateX(-50%) rotate(360deg); }
+  }
+
+  .dirt {
+    fill: #8a6a45;
+    stroke: #5c4526;
+    stroke-width: 2;
+    opacity: 0.85;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+  }
+  .dirt.gone {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  #pukuSvg.sparkle #pukuBody {
+    animation: shine 1.1s ease-in-out;
+  }
+  @keyframes shine {
+    0%, 100% { filter: none; }
+    50% { filter: drop-shadow(0 0 14px rgba(255,255,255,0.9)) brightness(1.25); }
+  }
+
+  .sparkleStar {
+    position: absolute;
+    font-size: 6vw;
+    pointer-events: none;
+    animation: sparklePop 1s ease-out forwards;
+    z-index: 6;
+  }
+  @keyframes sparklePop {
+    0%   { transform: translate(-50%, -50%) scale(0.2) rotate(0deg); opacity: 1; }
+    70%  { transform: translate(-50%, -50%) scale(1.1) rotate(180deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.8) rotate(320deg); opacity: 0; }
+  }
+
+  .bubbleFoam {
+    position: absolute;
+    bottom: -10%;
+    font-size: 6vw;
+    pointer-events: none;
+    animation: foamRise 2.2s ease-in forwards;
+    z-index: 5;
+  }
+  @keyframes foamRise {
+    0%   { transform: translateY(0) translateX(0) scale(0.6); opacity: 0.9; }
+    100% { transform: translateY(-90vh) translateX(var(--drift, 0px)) scale(1.2); opacity: 0; }
+  }
+
+  .bubble {
+    position: absolute;
+    top: 6%;
+    left: 50%;
+    transform: translate(-50%, 10px) scale(0.85);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 1.6vh 5vw;
+    font-size: clamp(18px, 5.2vw, 30px);
+    font-weight: 800;
+    color: #555;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    max-width: 82%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 13px 11px 0 11px;
+    border-style: solid;
+    border-color: #ffffff transparent transparent transparent;
+  }
+  .bubble.show {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  #controls {
+    flex: 0 0 auto;
+    padding: 2vh 5vw calc(2vh + env(safe-area-inset-bottom)) 5vw;
+  }
+
+  #showerBtn {
+    width: 100%;
+    height: 15vh;
+    min-height: 84px;
+    max-height: 130px;
+    border: none;
+    border-radius: 40px;
+    background: linear-gradient(160deg, #8fd7ff, #4fb4ef);
+    color: #fff;
+    font-size: clamp(20px, 6vw, 32px);
+    font-weight: 900;
+    box-shadow: 0 1.2vh 0 rgba(40, 110, 150, 0.5), 0 2vh 2vh rgba(0, 0, 0, 0.15);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    touch-action: manipulation;
+  }
+  #showerBtn:active {
+    transform: translateY(0.8vh);
+    box-shadow: 0 0.3vh 0 rgba(40, 110, 150, 0.5);
+  }
+</style>
+</head>
+<body>
+
+  <div id="app">
+    <div id="title">🛁 ぷくちゃんの おふろ</div>
+
+    <div id="characterArea">
+      <div class="ground-shadow"></div>
+
+      <div id="pukuReactWrap">
+        <div id="pukuDanceWrap" class="idle">
+          <svg id="pukuSvg" viewBox="0 0 300 320" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="212" cy="255" rx="24" ry="15" transform="rotate(30 212 255)" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+            <polygon points="228,238 244,232 236,250" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+            <ellipse cx="116" cy="298" rx="28" ry="18" fill="#5FCB93" stroke="#3C8F6C" stroke-width="4"/>
+            <ellipse cx="184" cy="298" rx="28" ry="18" fill="#5FCB93" stroke="#3C8F6C" stroke-width="4"/>
+
+            <polygon points="196,205 210,190 214,212" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+            <polygon points="205,230 220,218 221,238" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+            <g id="pukuBody">
+              <ellipse cx="150" cy="220" rx="76" ry="68" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="5"/>
+              <ellipse cx="150" cy="240" rx="44" ry="36" fill="#FFF6DA"/>
+            </g>
+
+            <ellipse id="armLeft" cx="78" cy="215" rx="20" ry="30" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+            <ellipse id="armRight" cx="222" cy="215" rx="20" ry="30" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+
+            <g id="pukuHead">
+              <circle cx="150" cy="105" r="70" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="5"/>
+
+              <polygon points="132,46 148,26 152,50" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+              <polygon points="150,44 165,25 170,50" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+              <ellipse cx="106" cy="132" rx="13" ry="8" fill="#FF9EB5" opacity="0.6"/>
+              <ellipse cx="194" cy="132" rx="13" ry="8" fill="#FF9EB5" opacity="0.6"/>
+
+              <g id="eyesOpen">
+                <ellipse cx="126" cy="108" rx="19" ry="23" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>
+                <ellipse cx="174" cy="108" rx="19" ry="23" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>
+                <circle cx="130" cy="113" r="9" fill="#2B2B3A"/>
+                <circle cx="170" cy="113" r="9" fill="#2B2B3A"/>
+                <circle cx="135" cy="104" r="3.5" fill="#FFFFFF"/>
+                <circle cx="175" cy="104" r="3.5" fill="#FFFFFF"/>
+              </g>
+              <g id="eyesHappy" style="display:none">
+                <path d="M112,110 Q126,96 140,110" stroke="#2B2B3A" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                <path d="M160,110 Q174,96 188,110" stroke="#2B2B3A" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+              </g>
+
+              <path d="M136,142 Q150,154 164,142" stroke="#2B2B3A" stroke-width="4" fill="none" stroke-linecap="round"/>
+            </g>
+
+            <ellipse class="dirt" data-name="d1" cx="110" cy="200" rx="12" ry="9" transform="rotate(-10 110 200)"/>
+            <ellipse class="dirt" data-name="d2" cx="185" cy="245" rx="14" ry="10" transform="rotate(15 185 245)"/>
+            <ellipse class="dirt" data-name="d3" cx="150" cy="190" rx="10" ry="8"/>
+            <ellipse class="dirt" data-name="d4" cx="120" cy="240" rx="11" ry="8" transform="rotate(8 120 240)"/>
+            <ellipse class="dirt" data-name="d5" cx="170" cy="205" rx="9" ry="7" transform="rotate(-20 170 205)"/>
+            <ellipse class="dirt" data-name="d6" cx="140" cy="255" rx="13" ry="9" transform="rotate(20 140 255)"/>
+            <ellipse class="dirt" data-name="d7" cx="100" cy="115" rx="8" ry="6" transform="rotate(-15 100 115)"/>
+            <ellipse class="dirt" data-name="d8" cx="200" cy="120" rx="9" ry="6" transform="rotate(12 200 120)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div id="speechBubble" class="bubble"></div>
+    </div>
+
+    <div id="controls">
+      <button id="showerBtn" type="button">🚿 シャワー</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var CLEAN_PHRASES = ["きもちいい！", "つるつる〜", "さっぱり！"];
+  var DONE_PHRASES = ["ぴかぴか！", "きれいに なったよ！"];
+  var STAR_EMOJI = ["✨", "⭐", "💎", "🌟"];
+
+  var characterArea = document.getElementById("characterArea");
+  var pukuReactWrap = document.getElementById("pukuReactWrap");
+  var pukuSvg = document.getElementById("pukuSvg");
+  var pukuHead = document.getElementById("pukuHead");
+  var eyesOpen = document.getElementById("eyesOpen");
+  var eyesHappy = document.getElementById("eyesHappy");
+  var showerBtn = document.getElementById("showerBtn");
+  var bubble = document.getElementById("speechBubble");
+
+  var hideBubbleTimer = null;
+  var scrubbing = false;
+  var lastX = 0, lastY = 0;
+  var refillTimer = null;
+
+  function randChoice(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function showSpeech(text) {
+    clearTimeout(hideBubbleTimer);
+    bubble.textContent = text;
+    bubble.classList.add("show");
+    hideBubbleTimer = setTimeout(function () {
+      bubble.classList.remove("show");
+    }, 1400);
+  }
+
+  function svgPointFromClient(clientX, clientY) {
+    var pt = pukuSvg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    var ctm = pukuSvg.getScreenCTM().inverse();
+    return pt.matrixTransform(ctm);
+  }
+
+  function getDirtEls() {
+    return Array.prototype.slice.call(pukuSvg.querySelectorAll(".dirt:not(.gone)"));
+  }
+
+  function scrubAt(clientX, clientY) {
+    var p = svgPointFromClient(clientX, clientY);
+    var dirtEls = getDirtEls();
+    var removedAny = false;
+    dirtEls.forEach(function (el) {
+      var cx = parseFloat(el.getAttribute("cx"));
+      var cy = parseFloat(el.getAttribute("cy"));
+      var dx = p.x - cx;
+      var dy = p.y - cy;
+      if (Math.sqrt(dx * dx + dy * dy) < 26) {
+        el.classList.add("gone");
+        removedAny = true;
+      }
+    });
+    if (removedAny) {
+      if (Math.random() < 0.4) { showSpeech(randChoice(CLEAN_PHRASES)); }
+      checkAllClean();
+    }
+  }
+
+  function spawnStar() {
+    var rect = characterArea.getBoundingClientRect();
+    var pukuRect = pukuReactWrap.getBoundingClientRect();
+    var x = pukuRect.left - rect.left + pukuRect.width * (0.2 + Math.random() * 0.6);
+    var y = pukuRect.top - rect.top + pukuRect.height * (0.15 + Math.random() * 0.6);
+    var el = document.createElement("div");
+    el.className = "sparkleStar";
+    el.textContent = randChoice(STAR_EMOJI);
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    characterArea.appendChild(el);
+    el.addEventListener("animationend", function () { el.remove(); });
+  }
+
+  function celebrateClean() {
+    pukuSvg.classList.add("sparkle");
+    eyesOpen.style.display = "none";
+    eyesHappy.style.display = "";
+    showSpeech(randChoice(DONE_PHRASES));
+    pukuReactWrap.classList.remove("react-jump", "react-spin");
+    void pukuReactWrap.offsetWidth;
+    pukuReactWrap.classList.add("react-jump");
+    for (var i = 0; i < 8; i++) {
+      setTimeout(spawnStar, i * 90);
+    }
+    setTimeout(function () {
+      pukuSvg.classList.remove("sparkle");
+    }, 1200);
+    refillTimer = setTimeout(function () {
+      eyesHappy.style.display = "none";
+      eyesOpen.style.display = "";
+      refillDirt();
+    }, 2600);
+  }
+
+  var cleanedOnce = false;
+  function checkAllClean() {
+    if (getDirtEls().length === 0 && !cleanedOnce) {
+      cleanedOnce = true;
+      celebrateClean();
+    }
+  }
+
+  function refillDirt() {
+    cleanedOnce = false;
+    var slots = [
+      [110, 200], [185, 245], [150, 190], [120, 240],
+      [170, 205], [140, 255], [100, 115], [200, 120]
+    ];
+    var count = 5 + Math.floor(Math.random() * 4);
+    var shuffled = slots.slice().sort(function () { return Math.random() - 0.5; }).slice(0, count);
+    var allDirt = pukuSvg.querySelectorAll(".dirt");
+    allDirt.forEach(function (el, i) {
+      if (i < shuffled.length) {
+        el.setAttribute("cx", shuffled[i][0]);
+        el.setAttribute("cy", shuffled[i][1]);
+        el.classList.remove("gone");
+      } else {
+        el.classList.add("gone");
+      }
+    });
+  }
+
+  characterArea.addEventListener("pointerdown", function (e) {
+    scrubbing = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    scrubAt(e.clientX, e.clientY);
+    characterArea.setPointerCapture(e.pointerId);
+  });
+  characterArea.addEventListener("pointermove", function (e) {
+    if (!scrubbing) { return; }
+    scrubAt(e.clientX, e.clientY);
+    lastX = e.clientX;
+    lastY = e.clientY;
+  });
+  function stopScrub() { scrubbing = false; }
+  characterArea.addEventListener("pointerup", stopScrub);
+  characterArea.addEventListener("pointercancel", stopScrub);
+
+  function spawnFoam() {
+    var rect = characterArea.getBoundingClientRect();
+    var count = 10;
+    for (var i = 0; i < count; i++) {
+      (function () {
+        var el = document.createElement("div");
+        el.className = "bubbleFoam";
+        el.textContent = "🫧";
+        var x = 10 + Math.random() * 80;
+        el.style.left = x + "%";
+        el.style.setProperty("--drift", (Math.random() * 60 - 30) + "px");
+        el.style.animationDelay = (Math.random() * 0.5) + "s";
+        characterArea.appendChild(el);
+        el.addEventListener("animationend", function () { el.remove(); });
+      })();
+    }
+  }
+
+  showerBtn.addEventListener("click", function () {
+    spawnFoam();
+    var dirtEls = getDirtEls();
+    var toClear = Math.min(2, dirtEls.length);
+    for (var i = 0; i < toClear; i++) {
+      dirtEls[i].classList.add("gone");
+    }
+    if (toClear > 0) {
+      showSpeech(randChoice(CLEAN_PHRASES));
+      checkAllClean();
+    }
+  });
+})();
+</script>
+</body>
+</html>

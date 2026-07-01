@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ぷくちゃんの たいそう</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", "Rounded Mplus 1c", sans-serif;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: linear-gradient(135deg, #ffd3e0, #fff6b7, #c9f0ff, #d5ffd5);
+    background-size: 400% 400%;
+    background-position: 0% 50%;
+  }
+  #app.running {
+    animation: bgShift 6s ease-in-out infinite;
+  }
+  @keyframes bgShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  #instruction {
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: clamp(24px, 8vw, 44px);
+    font-weight: 900;
+    color: #555;
+    padding: 3vh 4vw 1vh 4vw;
+    text-shadow: 0 2px 0 rgba(255,255,255,0.7);
+    min-height: 8vh;
+  }
+
+  #characterArea {
+    position: relative;
+    flex: 1;
+  }
+
+  .ground-shadow {
+    position: absolute;
+    bottom: 17%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42vw;
+    max-width: 230px;
+    height: 5vh;
+    max-height: 26px;
+    background: radial-gradient(ellipse at center, rgba(20, 40, 30, 0.3), rgba(20, 40, 30, 0));
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  #pukuReactWrap {
+    position: absolute;
+    left: 50%;
+    bottom: 13%;
+    transform: translateX(-50%);
+    width: min(70vw, 56vh);
+    aspect-ratio: 300 / 320;
+    z-index: 2;
+  }
+  #pukuMoveWrap { width: 100%; height: 100%; }
+  #pukuSvg { width: 100%; height: 100%; display: block; }
+
+  #pukuMoveWrap.idle { animation: idleBob 2.2s ease-in-out infinite; }
+  @keyframes idleBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2%); }
+  }
+
+  #pukuMoveWrap.armsUp #armLeft {
+    transform-box: fill-box;
+    transform-origin: 50% 0%;
+    animation: armsUpL 0.9s ease-in-out infinite;
+  }
+  #pukuMoveWrap.armsUp #armRight {
+    transform-box: fill-box;
+    transform-origin: 50% 0%;
+    animation: armsUpR 0.9s ease-in-out infinite;
+  }
+  @keyframes armsUpL {
+    0%, 100% { transform: rotate(-150deg); }
+    50%      { transform: rotate(-170deg); }
+  }
+  @keyframes armsUpR {
+    0%, 100% { transform: rotate(150deg); }
+    50%      { transform: rotate(170deg); }
+  }
+
+  #pukuMoveWrap.spinning {
+    animation: spinBody 1.1s linear infinite;
+    transform-origin: 50% 70%;
+  }
+  @keyframes spinBody {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  #pukuMoveWrap.jumping {
+    animation: jumpBody 0.6s ease-in-out infinite;
+  }
+  @keyframes jumpBody {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    30%      { transform: translateY(0) scale(1.1, 0.85); }
+    60%      { transform: translateY(-18%) scale(0.92, 1.08); }
+    100%     { transform: translateY(0) scale(1, 1); }
+  }
+
+  #pukuMoveWrap.swaying {
+    animation: swayBody 1s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+  @keyframes swayBody {
+    0%, 100% { transform: rotate(-8deg); }
+    50%      { transform: rotate(8deg); }
+  }
+
+  #pukuReactWrap.react-pop { animation: reactPop 0.5s ease; }
+  @keyframes reactPop {
+    0%   { transform: translateX(-50%) scale(1); }
+    40%  { transform: translateX(-50%) scale(1.18); }
+    100% { transform: translateX(-50%) scale(1); }
+  }
+
+  .effect {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 9vw;
+    pointer-events: none;
+    animation: effectPop 0.9s ease-out forwards;
+    z-index: 4;
+  }
+  @keyframes effectPop {
+    0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+    60%  { transform: translate(-50%, -80%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, -160%) scale(0.9); opacity: 0; }
+  }
+
+  .bubble {
+    position: absolute;
+    top: 4%;
+    left: 50%;
+    transform: translate(-50%, 10px) scale(0.85);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 1.6vh 5vw;
+    font-size: clamp(18px, 5.2vw, 30px);
+    font-weight: 800;
+    color: #555;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    max-width: 82%;
+    text-align: center;
+    pointer-events: none;
+    z-index: 6;
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -13px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 13px 11px 0 11px;
+    border-style: solid;
+    border-color: #ffffff transparent transparent transparent;
+  }
+  .bubble.show {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  #controls {
+    flex: 0 0 auto;
+    padding: 2.5vh 5vw calc(2.5vh + env(safe-area-inset-bottom)) 5vw;
+  }
+
+  #startBtn {
+    width: 100%;
+    height: 16vh;
+    min-height: 92px;
+    max-height: 150px;
+    border: none;
+    border-radius: 40px;
+    background: linear-gradient(160deg, #ff9fc0, #ff6f9e);
+    color: #fff;
+    font-size: clamp(20px, 6.2vw, 34px);
+    font-weight: 900;
+    box-shadow: 0 1.2vh 0 rgba(184, 60, 105, 0.5), 0 2vh 2vh rgba(0, 0, 0, 0.15);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    touch-action: manipulation;
+  }
+  #startBtn:active {
+    transform: translateY(0.8vh);
+    box-shadow: 0 0.3vh 0 rgba(184, 60, 105, 0.5);
+  }
+  #startBtn.playing {
+    background: linear-gradient(160deg, #8fe3c0, #4fcf9e);
+    box-shadow: 0 1.2vh 0 rgba(46, 133, 100, 0.5), 0 2vh 2vh rgba(0, 0, 0, 0.15);
+  }
+  #startBtn.playing:active {
+    box-shadow: 0 0.3vh 0 rgba(46, 133, 100, 0.5);
+  }
+</style>
+</head>
+<body>
+
+  <div id="app">
+    <div id="instruction">タップして スタート！</div>
+
+    <div id="characterArea">
+      <div class="ground-shadow"></div>
+
+      <div id="pukuReactWrap">
+        <div id="pukuMoveWrap" class="idle">
+          <svg id="pukuSvg" viewBox="0 0 300 320" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="212" cy="255" rx="24" ry="15" transform="rotate(30 212 255)" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+            <polygon points="228,238 244,232 236,250" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+            <ellipse cx="116" cy="298" rx="28" ry="18" fill="#5FCB93" stroke="#3C8F6C" stroke-width="4"/>
+            <ellipse cx="184" cy="298" rx="28" ry="18" fill="#5FCB93" stroke="#3C8F6C" stroke-width="4"/>
+
+            <polygon points="196,205 210,190 214,212" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+            <polygon points="205,230 220,218 221,238" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+            <ellipse cx="150" cy="220" rx="76" ry="68" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="5"/>
+            <ellipse cx="150" cy="240" rx="44" ry="36" fill="#FFF6DA"/>
+
+            <ellipse id="armLeft" cx="78" cy="215" rx="20" ry="30" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+            <ellipse id="armRight" cx="222" cy="215" rx="20" ry="30" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="4"/>
+
+            <g id="pukuHead">
+              <circle cx="150" cy="105" r="70" fill="#7FE3B3" stroke="#3C8F6C" stroke-width="5"/>
+
+              <polygon points="132,46 148,26 152,50" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+              <polygon points="150,44 165,25 170,50" fill="#5FCB93" stroke="#3C8F6C" stroke-width="3" stroke-linejoin="round"/>
+
+              <ellipse cx="106" cy="132" rx="13" ry="8" fill="#FF9EB5" opacity="0.6"/>
+              <ellipse cx="194" cy="132" rx="13" ry="8" fill="#FF9EB5" opacity="0.6"/>
+
+              <ellipse cx="126" cy="108" rx="19" ry="23" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>
+              <ellipse cx="174" cy="108" rx="19" ry="23" fill="#FFFFFF" stroke="#3C8F6C" stroke-width="2.5"/>
+              <circle cx="130" cy="113" r="9" fill="#2B2B3A"/>
+              <circle cx="170" cy="113" r="9" fill="#2B2B3A"/>
+              <circle cx="135" cy="104" r="3.5" fill="#FFFFFF"/>
+              <circle cx="175" cy="104" r="3.5" fill="#FFFFFF"/>
+
+              <path d="M136,142 Q150,154 164,142" stroke="#2B2B3A" stroke-width="4" fill="none" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div id="speechBubble" class="bubble"></div>
+    </div>
+
+    <div id="controls">
+      <button id="startBtn" type="button">🎶 たいそう スタート ▶</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var MOVES = [
+    { text: "てを あげて！", cls: "armsUp" },
+    { text: "まわって！", cls: "spinning" },
+    { text: "ジャンプ！", cls: "jumping" },
+    { text: "ゆらゆら！", cls: "swaying" }
+  ];
+  var PRAISE = ["じょうず！", "すごい！", "いいね！", "その ちょうし！"];
+  var EFFECT_EMOJI = ["⭐", "✨", "💖", "🌟"];
+  var MELODY = [523.25, 587.33, 659.25, 523.25, 659.25, 783.99, 659.25, 587.33];
+  var STEP_MS = 320;
+  var MOVE_MS = 3200;
+
+  var app = document.getElementById("app");
+  var instruction = document.getElementById("instruction");
+  var characterArea = document.getElementById("characterArea");
+  var pukuReactWrap = document.getElementById("pukuReactWrap");
+  var pukuMoveWrap = document.getElementById("pukuMoveWrap");
+  var startBtn = document.getElementById("startBtn");
+  var bubble = document.getElementById("speechBubble");
+
+  var audioCtx = null;
+  var playing = false;
+  var musicTimer = null;
+  var moveTimer = null;
+  var stepIndex = 0;
+  var hideBubbleTimer = null;
+  var moveClasses = ["armsUp", "spinning", "jumping", "swaying"];
+
+  function randChoice(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) { audioCtx = new Ctx(); }
+    }
+    return audioCtx;
+  }
+
+  function playNote(freq, durationSec, volume) {
+    var ctx = ensureAudio();
+    if (!ctx) { return; }
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    var now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+    osc.start(now);
+    osc.stop(now + durationSec);
+  }
+
+  function musicStep() {
+    var note = MELODY[stepIndex % MELODY.length];
+    playNote(note, (STEP_MS / 1000) * 0.9, 0.22);
+    if (stepIndex % 4 === 0) {
+      playNote(note / 2, (STEP_MS / 1000) * 0.9, 0.15);
+    }
+    stepIndex++;
+  }
+
+  function showSpeech(text) {
+    clearTimeout(hideBubbleTimer);
+    bubble.textContent = text;
+    bubble.classList.add("show");
+    hideBubbleTimer = setTimeout(function () {
+      bubble.classList.remove("show");
+    }, 1400);
+  }
+
+  function spawnEffect(clientX, clientY) {
+    var rect = characterArea.getBoundingClientRect();
+    var x = clientX - rect.left;
+    var y = clientY - rect.top;
+    var el = document.createElement("div");
+    el.className = "effect";
+    el.textContent = randChoice(EFFECT_EMOJI);
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    characterArea.appendChild(el);
+    el.addEventListener("animationend", function () { el.remove(); });
+  }
+
+  function clearMoveClasses() {
+    moveClasses.forEach(function (c) { pukuMoveWrap.classList.remove(c); });
+  }
+
+  function nextMove() {
+    var move = randChoice(MOVES);
+    instruction.textContent = move.text;
+    pukuMoveWrap.classList.remove("idle");
+    clearMoveClasses();
+    void pukuMoveWrap.offsetWidth;
+    pukuMoveWrap.classList.add(move.cls);
+  }
+
+  function startExercise() {
+    var ctx = ensureAudio();
+    if (ctx && ctx.state === "suspended") { ctx.resume(); }
+    if (playing) { return; }
+    playing = true;
+    stepIndex = 0;
+    startBtn.textContent = "⏸ とめる";
+    startBtn.classList.add("playing");
+    app.classList.add("running");
+    musicStep();
+    musicTimer = setInterval(musicStep, STEP_MS);
+    nextMove();
+    moveTimer = setInterval(nextMove, MOVE_MS);
+  }
+
+  function stopExercise() {
+    playing = false;
+    clearInterval(musicTimer);
+    musicTimer = null;
+    clearInterval(moveTimer);
+    moveTimer = null;
+    startBtn.textContent = "🎶 たいそう スタート ▶";
+    startBtn.classList.remove("playing");
+    app.classList.remove("running");
+    clearMoveClasses();
+    pukuMoveWrap.classList.add("idle");
+    instruction.textContent = "タップして スタート！";
+  }
+
+  function reactPop() {
+    pukuReactWrap.classList.remove("react-pop");
+    void pukuReactWrap.offsetWidth;
+    pukuReactWrap.classList.add("react-pop");
+  }
+  pukuReactWrap.addEventListener("animationend", function (e) {
+    if (e.animationName === "reactPop") {
+      pukuReactWrap.classList.remove("react-pop");
+    }
+  });
+
+  characterArea.addEventListener("pointerdown", function (e) {
+    if (!playing) { return; }
+    spawnEffect(e.clientX, e.clientY);
+    reactPop();
+    showSpeech(randChoice(PRAISE));
+  });
+
+  startBtn.addEventListener("click", function () {
+    if (playing) {
+      stopExercise();
+    } else {
+      startExercise();
+    }
+  });
+})();
+</script>
+</body>
+</html>
